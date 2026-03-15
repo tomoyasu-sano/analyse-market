@@ -32,7 +32,7 @@ function parseRSS(xml: string): Array<{ title: string; url: string; summary: str
       items.push({
         title,
         url: link,
-        summary: desc.replace(/<[^>]+>/g, '').slice(0, 300),
+        summary: desc.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/<[^>]+>/g, '').trim().slice(0, 300),
         published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
       })
     }
