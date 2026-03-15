@@ -7,6 +7,7 @@
     "collect:googleplay": "ts-node src/collectors/apps/googleplay.ts",
     "collect:apps": "ts-node src/collectors/apps/appstore.ts && ts-node src/collectors/apps/googleplay.ts",
     "collect:genai": "ts-node src/collectors/genai/anthropic.ts && ts-node src/collectors/genai/openai.ts && ts-node src/collectors/genai/github.ts && ts-node src/collectors/genai/hackernews.ts",
+    "collect:phase4": "ts-node src/collectors/genai/packages.ts && ts-node src/collectors/genai/reddit.ts && ts-node src/collectors/genai/google.ts && ts-node src/collectors/genai/producthunt.ts && ts-node src/collectors/apps/trends.ts",
     "analyze:recommend": "ts-node src/analyzers/apps/recommend.ts",
     "analyze:genai": "ts-node src/analyzers/genai/weekly-report.ts"
   },
@@ -14,7 +15,8 @@
     "@google/genai": "^1.45.0",
     "@google/generative-ai": "^0.21.0",
     "@supabase/supabase-js": "^2.49.0",
-    "google-play-scraper": "^9.1.1"
+    "google-play-scraper": "^9.1.1",
+    "google-trends-api": "^4.9.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

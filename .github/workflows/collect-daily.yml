@@ -24,6 +24,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # --- Apps チャンネル ---
       - name: Collect App Store rankings
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -35,3 +36,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run collect:googleplay
+
+      # --- GenAI チャンネル (Phase 3.5) ---
+      - name: Collect GenAI items
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run collect:genai
+
+      # --- Phase 4: 拡張データソース ---
+      - name: Collect Phase 4 sources
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PRODUCT_HUNT_API_TOKEN: ${{ secrets.PRODUCT_HUNT_API_TOKEN }}
+        run: npm run collect:phase4

@@ -15,21 +15,26 @@ interface GenAIReport {
 }
 
 const SOURCE_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  anthropic:  { label: 'Anthropic', color: '#dc2626', bg: '#fee2e2' },
-  openai:     { label: 'OpenAI',    color: '#16a34a', bg: '#dcfce7' },
-  google:     { label: 'Google',    color: '#2563eb', bg: '#dbeafe' },
-  github:     { label: 'GitHub',    color: '#374151', bg: '#f3f4f6' },
-  hackernews: { label: 'HN',        color: '#d97706', bg: '#fef3c7' },
-  reddit:     { label: 'Reddit',    color: '#7c3aed', bg: '#ede9fe' },
-  npm:        { label: 'npm',       color: '#dc2626', bg: '#fee2e2' },
+  anthropic:   { label: 'Anthropic', color: '#dc2626', bg: '#fee2e2' },
+  openai:      { label: 'OpenAI',    color: '#16a34a', bg: '#dcfce7' },
+  google:      { label: 'Google',    color: '#2563eb', bg: '#dbeafe' },
+  github:      { label: 'GitHub',    color: '#374151', bg: '#f3f4f6' },
+  hackernews:  { label: 'HN',        color: '#d97706', bg: '#fef3c7' },
+  reddit:      { label: 'Reddit',    color: '#7c3aed', bg: '#ede9fe' },
+  npm:         { label: 'npm',       color: '#dc2626', bg: '#fee2e2' },
+  producthunt: { label: 'PH',        color: '#da552f', bg: '#fff1ed' },
 }
 
 const SOURCE_FILTERS = [
-  { value: 'all', label: '全て' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'github', label: 'GitHub' },
-  { value: 'hackernews', label: 'HN' },
+  { value: 'all',         label: '全て' },
+  { value: 'anthropic',   label: 'Anthropic' },
+  { value: 'openai',      label: 'OpenAI' },
+  { value: 'github',      label: 'GitHub' },
+  { value: 'hackernews',  label: 'HN' },
+  { value: 'reddit',      label: 'Reddit' },
+  { value: 'npm',         label: 'npm' },
+  { value: 'google',      label: 'Google' },
+  { value: 'producthunt', label: 'PH' },
 ]
 
 function SourceBadge({ source }: { source: string }) {
