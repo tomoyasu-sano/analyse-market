@@ -57,9 +57,18 @@ function ScoreBar({ score }: { score: number }) {
   )
 }
 
-function extractHighlightSection(content: string): string {
-  const m = content.match(/## 今週のハイライト[\s\S]*?(?=\n## [^今]|$)/)
+function extractSection(content: string, heading: string): string {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const m = content.match(new RegExp(`## ${escaped}[\\s\\S]*?(?=\\n## |$)`))
   return m ? m[0] : ''
+}
+
+function extractHighlightSection(content: string): string {
+  return extractSection(content, '今週のハイライト')
+}
+
+function extractNpmSection(content: string): string {
+  return extractSection(content, 'npmアップデートアラート')
 }
 
 function extractActionItems(content: string): string[] {
@@ -78,6 +87,7 @@ export function GenAiDashboard({ report, items }: { report: GenAIReport | null; 
   const filtered = sourceFilter === 'all' ? items : items.filter(i => i.source === sourceFilter)
   const actionItems = report ? extractActionItems(report.content) : []
   const highlightSection = report ? extractHighlightSection(report.content) : ''
+  const npmSection = report ? extractNpmSection(report.content) : ''
 
   // フィルターごとの件数
   const counts: Record<string, number> = { all: items.length }
@@ -136,7 +146,28 @@ export function GenAiDashboard({ report, items }: { report: GenAIReport | null; 
         </section>
       )}
 
-      {/* Section B: 自分の開発に活かせること */}
+      {/* Section B: npmアップデートアラート */}
+      {npmSection && !npmSection.includes('対応不要') && (
+        <section className="px-4">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#2d3432' }}>
+            npm アップデートアラート
+          </h2>
+          <div className="rounded-2xl p-5 prose prose-sm max-w-none" style={{ backgroundColor: '#fff8f0', boxShadow: '0 4px 24px -2px rgba(45,52,50,0.06)', border: '1px solid #fde68a' }}>
+            <ReactMarkdown
+              components={{
+                h2: () => null,
+                p: ({ children }) => <p className="text-[13px] leading-relaxed mb-2" style={{ color: '#2d3432' }}>{children}</p>,
+                li: ({ children }) => <li className="text-[13px] leading-relaxed mb-1" style={{ color: '#2d3432' }}>{children}</li>,
+                strong: ({ children }) => <strong style={{ color: '#92400e' }}>{children}</strong>,
+              }}
+            >
+              {npmSection}
+            </ReactMarkdown>
+          </div>
+        </section>
+      )}
+
+      {/* Section C: 自分の開発に活かせること */}
       {actionItems.length > 0 && (
         <section className="px-4">
           <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#2d3432' }}>

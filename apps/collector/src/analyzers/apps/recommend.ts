@@ -40,6 +40,12 @@ interface RecommendationParsed {
   difficulty: 'easy' | 'medium' | 'hard' | null
 }
 
+interface TrendSignal {
+  keyword: string
+  score: number
+  momentum: string
+}
+
 async function fetchRecentRankings(): Promise<RankingRow[]> {
   const since = new Date(Date.now() - DATA_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
@@ -55,23 +61,43 @@ async function fetchRecentRankings(): Promise<RankingRow[]> {
   return (data ?? []) as RankingRow[]
 }
 
-function buildPrompt(rankings: RankingRow[]): string {
-  // Top50 に絞ってトークン節約
+async function fetchTrendSignals(): Promise<TrendSignal[]> {
+  const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+  const { data } = await supabase
+    .from('amk_trend_signals')
+    .select('keyword, score, momentum')
+    .gte('collected_at', since)
+    .order('score', { ascending: false })
+  return (data ?? []) as TrendSignal[]
+}
+
+function buildPrompt(rankings: RankingRow[], trends: TrendSignal[]): string {
   const topFree = rankings.filter(r => r.platform === 'ios' && r.chart_type === 'free').slice(0, 50)
   const topAndroid = rankings.filter(r => r.platform === 'android' && r.chart_type === 'free' && r.category === 'all').slice(0, 50)
-  const lowRated = rankings.filter(r => r.rating !== null && r.rating <= 2.5 && r.rating_count !== null && r.rating_count > 1000).slice(0, 30)
+  const lowRated = rankings.filter(r => r.rating !== null && r.rating <= 2.5 && r.rating_count !== null && r.rating_count > 1000).slice(0, 20)
 
   const formatRow = (r: RankingRow) =>
     `  #${r.rank} ${r.app_name} (${r.developer}) genre=${r.genre ?? 'n/a'} rating=${r.rating ?? 'n/a'}★ (${r.rating_count ?? 'n/a'} reviews)`
 
-  return `あなたは個人開発者のビジネスアドバイザーです。
-以下の市場データを基に、今作るべきスマートフォンアプリを提案してください。
+  const trendSection = trends.length > 0
+    ? trends.map(t => `  ${t.momentum === 'rising' ? '↑上昇中' : t.momentum === 'falling' ? '↓下降中' : '→横ばい'} "${t.keyword}" score=${t.score}/100`).join('\n')
+    : '  (データなし)'
 
-開発者プロフィール:
-- スキル: React Native（学習中）, Next.js（経験あり）, Supabase, TypeScript
-- 1人開発
-- 目標: App Store / Google Play で収益を上げる
-- 重要: 「作りたいもの」ではなく「市場が求めるもの」を基準に提案すること
+  return `あなたは個人開発者専門のビジネスアドバイザーです。
+以下の市場データを分析し、「今作れば勝てる」アプリを厳選5件だけ提案してください。
+
+## 開発者プロフィール
+- スキル: React Native（学習中）, Next.js（経験あり）, Supabase, TypeScript, 1人開発
+- 目標: App Store / Google Play で収益を上げる（有料 or サブスク）
+- 重視: 数値根拠のある提案のみ。感覚での提案は不要。
+
+## 優先基準（この順で評価すること）
+1. iOS + Android 両方でランクインしている（需要の確実性）
+2. Google Trends が「上昇中↑」（タイミングが今）
+3. 既存トップアプリの評価が低い or 少ない（市場に不満がある）
+4. React Native で6週以内に1人で作れる
+
+## 市場データ
 
 [iOS 無料Top50（直近${DATA_DAYS}日）]
 ${topFree.map(formatRow).join('\n') || '  (データなし)'}
@@ -79,31 +105,36 @@ ${topFree.map(formatRow).join('\n') || '  (データなし)'}
 [Android 無料Top50（直近${DATA_DAYS}日）]
 ${topAndroid.map(formatRow).join('\n') || '  (データなし)'}
 
-[低評価アプリ（rating ≤ 2.5★、1000件以上のレビュー）= 不満の多いカテゴリ]
+[低評価アプリ（rating ≤ 2.5★、1000件以上レビュー）= ユーザーが不満を持つカテゴリ]
 ${lowRated.map(formatRow).join('\n') || '  (データなし)'}
 
-以下の形式で10件提案してください。ニーズの大きい順。全ゾーン（🟢🟡🔴⬛）を含めること。
+[Google Trends — アプリ開発関連キーワード（直近7日、US）]
+${trendSection}
+
+## 出力形式（厳守）
+**5件のみ**。優先基準スコアが高い順。「今すぐ作れる🟢 NOW」を最低2件含めること。
 
 ---
 ## 提案 {n}: {アプリ名}
 
 **カテゴリ**: {カテゴリ}
-**ターゲットユーザー**: {具体的なユーザー像}
+**ターゲットユーザー**: {具体的なユーザー像・1行}
 **コンセプト**: {1-2行}
-**差別化ポイント**: {既存アプリとの違い}
+**差別化ポイント**: {既存アプリとの違い・1行}
 
 **市場データ根拠**:
-- {具体的な数値: 例「App Store 無料Top20に3本、平均評価2.8★と低い」}
-- {例「同カテゴリがAndroid/iOS両方でTop50にランクイン」}
+- ランキング: {「iOS無料#X / Android無料#Y」など具体的な順位}
+- トレンド: {Trendsのスコアと方向。データなしなら「Trendsデータなし」と書く}
+- 競合の弱点: {低評価アプリがあれば「既存アプリ ★X.X(N件)と低評価」、なければ「低評価なし」}
 
 **市場規模**: large / medium / niche
 **競合密度**: low / medium / high
 **収益化モデル**: freemium / paid / ads / subscription
 
 **実現可能性**: 🟢 NOW / 🟡 LEARN / 🔴 HARD / ⬛ HARDWARE
-**判断根拠**: {例: "APIのみで実装可能" / "BLEハードが必要"}
-**必要スキル**: {カンマ区切り, 例: React Native, Supabase}
-**概算開発期間**: {例: 4〜6週間（1人）} または 見積不可
+**判断根拠**: {1行で判断理由}
+**必要スキル**: {カンマ区切り}
+**概算開発期間**: {X〜Y週間（1人）}
 ---
 `
 }
@@ -178,7 +209,11 @@ async function main() {
     process.exit(1)
   }
 
-  const prompt = buildPrompt(rankings)
+  console.log('[Recommend] Fetching trend signals...')
+  const trends = await fetchTrendSignals()
+  console.log(`[Recommend] ${trends.length} trend signals fetched`)
+
+  const prompt = buildPrompt(rankings, trends)
   console.log('[Recommend] Calling Gemini API...')
   const { text, tokensUsed } = await generateText(prompt)
   console.log(`[Recommend] Tokens used: ${tokensUsed}`)

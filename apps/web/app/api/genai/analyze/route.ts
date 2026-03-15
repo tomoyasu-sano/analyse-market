@@ -18,6 +18,78 @@ function extractActionItems(content: string): string[] {
     .slice(0, 5)
 }
 
+function buildPrompt(items: any[]): string {
+  const bySource = (src: string) => items.filter((i: any) => i.source === src)
+  const fmt = (i: any) => `  - ${i.title}\n    ${i.url}\n    ${i.summary?.slice(0, 120) ?? '(概要なし)'}`
+
+  const npmItems = bySource('npm')
+  const npmSection = npmItems.length > 0
+    ? npmItems.map((i: any) => `  - ${i.title}: ${i.summary ?? ''}`).join('\n')
+    : '  (更新なし)'
+
+  return `あなたは個人開発者専属のAI技術アドバイザーです。
+以下の情報から「私が今週知るべきこと」だけを厳選して伝えてください。
+
+## 私のプロフィール
+- Claude / Claude Code で個人開発（React Native / Next.js / Supabase）
+- スマホアプリで収益化したい
+- AIツールは「実際に自分のコードで使えるか」が判断基準
+
+## ルール（必ず守ること）
+- 情報の羅列ではなく「これを知らないと損する情報」だけを選ぶ
+- 各セクション最大3件。それ以上は書かない
+- アクションアイテムは「明日できる具体的な作業」のみ。抽象論・感想は書かない
+- URLは必ず含める
+
+## 今週の収集データ
+
+[Anthropic/Claude 関連]
+${bySource('anthropic').slice(0, 5).map(fmt).join('\n') || '  (データなし)'}
+
+[OpenAI 関連]
+${bySource('openai').slice(0, 5).map(fmt).join('\n') || '  (データなし)'}
+
+[Google AI 関連]
+${bySource('google').slice(0, 3).map(fmt).join('\n') || '  (データなし)'}
+
+[GitHub 急上昇リポジトリ]
+${bySource('github').slice(0, 8).map(fmt).join('\n') || '  (データなし)'}
+
+[Hacker News]
+${bySource('hackernews').slice(0, 5).map(fmt).join('\n') || '  (データなし)'}
+
+[Reddit (r/ClaudeAI, r/LocalLLaMA, r/MachineLearning)]
+${bySource('reddit').slice(0, 5).map(fmt).join('\n') || '  (データなし)'}
+
+[Product Hunt 注目AIプロダクト]
+${bySource('producthunt').slice(0, 5).map(fmt).join('\n') || '  (データなし)'}
+
+[npmパッケージ更新]
+${npmSection}
+
+## 出力形式（この構成で必ず出力）
+
+## 今週のハイライト
+今週最も重要な情報を1〜3件だけ。各項目にURL必須。
+形式: **タイトル** ([ソース名](URL))
+  → なぜ重要か: 1行
+  → 自分の開発への影響: 1行
+
+## npmアップデートアラート
+バージョンアップしたパッケージの中で「自分のコードに影響がありそうなもの」のみ。
+影響なければ「今週は対応不要」と書く。
+
+## 新しいAIツール（Product Hunt / GitHub から）
+今すぐ試せそうなツール・ライブラリを最大3件。URL付き。
+なければ「今週は特になし」と書く。
+
+## コミュニティの声（Reddit / HN から）
+開発者の間で話題になっているトピックを1〜2件。何が議論されているかを1行で。
+
+## 自分の開発に今すぐ活かせること
+明日できる具体的な作業を3件。「○○のドキュメントを読む」ではなく「○○を使って△△を実装する」形で。`
+}
+
 export async function POST() {
   try {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -26,44 +98,13 @@ export async function POST() {
       .select('source, item_type, title, url, summary, relevance_score')
       .gte('collected_at', since)
       .order('relevance_score', { ascending: false })
-      .limit(50)
+      .limit(60)
 
     if (itemsError) throw new Error(itemsError.message)
     if (!items || items.length === 0) throw new Error('GenAIデータがありません。先に collect:genai を実行してください。')
 
-    const bySource = (src: string) => items.filter((i: any) => i.source === src)
-    const fmt = (i: any) => `  - [${i.source.toUpperCase()}] ${i.title}\n    ${i.summary?.slice(0, 150) ?? ''}`
-
-    const prompt = `あなたは生成AI開発の動向アナリストです。直近1週間の情報を整理してください。
-
-読み手: Claude/Claude Codeで個人開発。React Native / Next.js / Supabase。新AI機能をすぐ取り込みたい。
-
-[Anthropic / Claude 関連]
-${bySource('anthropic').map(fmt).join('\n') || '  (データなし)'}
-
-[OpenAI 関連]
-${bySource('openai').map(fmt).join('\n') || '  (データなし)'}
-
-[GitHub 急上昇（AI系）]
-${bySource('github').map(fmt).join('\n') || '  (データなし)'}
-
-[Hacker News]
-${bySource('hackernews').map(fmt).join('\n') || '  (データなし)'}
-
-以下の構成でレポートを作成:
-
-## 今週のハイライト（最重要3件）
-各項目: タイトル・URL・なぜ重要か（2行）・自分の開発への影響（1行）
-
-## Anthropic / Claude 動向
-## OpenAI 動向
-## GitHub 急上昇（AI系）
-## HackerNews 注目記事
-
-## 自分の開発に今すぐ活かせること
-- 「○○を使って△△する」という具体的アクション（3〜5件）`
-
-    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt })
+    const prompt = buildPrompt(items)
+    const response = await ai.models.generateContent({ model: 'gemini-2.0-flash-001', contents: prompt })
     const text = response.text ?? ''
     const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0
     const actionItems = extractActionItems(text)
