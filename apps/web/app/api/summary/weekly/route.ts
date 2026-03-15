@@ -120,7 +120,7 @@ ${genaiSection}
 - [ ] 具体的な作業
 `
 
-    const response = await ai.models.generateContent({ model: 'gemini-2.0-flash-001', contents: prompt })
+    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt })
     const text = response.text ?? ''
     const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0
 

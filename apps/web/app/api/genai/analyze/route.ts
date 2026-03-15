@@ -104,7 +104,7 @@ export async function POST() {
     if (!items || items.length === 0) throw new Error('GenAIデータがありません。先に collect:genai を実行してください。')
 
     const prompt = buildPrompt(items)
-    const response = await ai.models.generateContent({ model: 'gemini-2.0-flash-001', contents: prompt })
+    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt })
     const text = response.text ?? ''
     const tokensUsed = response.usageMetadata?.totalTokenCount ?? 0
     const actionItems = extractActionItems(text)
