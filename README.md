@@ -14,7 +14,7 @@
 ## 毎朝の使い方
 
 ```
-1. http://localhost:3000（または Vercel URL）を開く
+1. http://localhost:3001（または Vercel URL）を開く
 2. 「今すぐ分析」ボタンを押す（Apps タブ or GenAI タブ）
 3. 「今週のサマリー」ボタンを押して今週全体を1画面で確認
 4. Apps タブ → 「今すぐ着手可」フィルターで今週作るアプリを決める
@@ -27,13 +27,13 @@
 
 | チャンネル | 概要 | 状況 |
 |-----------|------|------|
-| 📱 **Apps** | App Store / Google Play ランキング + Google Trends → 「今作るべきアプリ5件」を推薦 | ✅ 実装済み |
-| 🤖 **GenAI** | Anthropic / OpenAI / Google / GitHub / HN / Reddit / PH / npm → 「今週のAI動向・明日やること」 | ✅ 実装済み |
-| 📊 **SNS** | X(Twitter) / TikTok / Instagram のトレンド収集 | 🔜 Phase 5 |
+| **Apps** | App Store / Google Play ランキング + Google Trends → 「今作るべきアプリ5件」を推薦 | ✅ 実装済み |
+| **GenAI** | Anthropic / OpenAI / Google / GitHub / HN / Reddit / PH / npm → 「今週のAI動向・明日やること」 | ✅ 実装済み |
+| **SNS** | X(Twitter) / TikTok / Instagram のトレンド収集 | 🔜 Phase 5 |
 
 ---
 
-## 📱 Apps チャンネル — データ収集ソース
+## Apps チャンネル — データ収集ソース
 
 | ソース | 内容 | 頻度 |
 |--------|------|------|
@@ -50,7 +50,7 @@
 
 ---
 
-## 🤖 GenAI チャンネル — データ収集ソース
+## GenAI チャンネル — データ収集ソース
 
 | ソース | 内容 | スコア |
 |--------|------|--------|
@@ -75,7 +75,7 @@
 
 ---
 
-## 📅 週次サマリー機能
+## 週次サマリー機能
 
 ヘッダーの「今週のサマリー」ボタンを押すと、**全チャンネルのデータを横断した1週間の総括**を生成します。
 

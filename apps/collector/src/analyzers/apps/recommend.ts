@@ -95,7 +95,7 @@ function buildPrompt(rankings: RankingRow[], trends: TrendSignal[]): string {
 1. iOS + Android 両方でランクインしている（需要の確実性）
 2. Google Trends が「上昇中↑」（タイミングが今）
 3. 既存トップアプリの評価が低い or 少ない（市場に不満がある）
-4. React Native で6週以内に1人で作れる
+4. React Native で1人で作れる（期間は問わない）
 
 ## 市場データ
 
@@ -134,7 +134,7 @@ ${trendSection}
 **実現可能性**: 🟢 NOW / 🟡 LEARN / 🔴 HARD / ⬛ HARDWARE
 **判断根拠**: {1行で判断理由}
 **必要スキル**: {カンマ区切り}
-**概算開発期間**: {X〜Y週間（1人）}
+**概算開発期間**: {X〜Y週間（1人）または「見積不可」}
 ---
 `
 }
