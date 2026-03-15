@@ -1,0 +1,24 @@
+{
+  "name": "analyse-market-collector",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "collect:appstore": "ts-node src/collectors/apps/appstore.ts",
+    "collect:googleplay": "ts-node src/collectors/apps/googleplay.ts",
+    "collect:apps": "ts-node src/collectors/apps/appstore.ts && ts-node src/collectors/apps/googleplay.ts",
+    "collect:genai": "ts-node src/collectors/genai/anthropic.ts && ts-node src/collectors/genai/openai.ts && ts-node src/collectors/genai/github.ts && ts-node src/collectors/genai/hackernews.ts",
+    "analyze:recommend": "ts-node src/analyzers/apps/recommend.ts",
+    "analyze:genai": "ts-node src/analyzers/genai/weekly-report.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.45.0",
+    "@google/generative-ai": "^0.21.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "google-play-scraper": "^9.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}
