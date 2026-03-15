@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { BarChart2, History, LayoutDashboard, TrendingUp } from 'lucide-react'
 import { AppsDashboard } from './apps/AppsDashboard'
 import { GenAiDashboard } from './genai/GenAiDashboard'
+import { WeeklySummaryButton } from './WeeklySummary'
 
 interface Recommendation {
   id: string; rank: number; app_concept: string; category: string | null
@@ -47,6 +48,11 @@ export function Dashboard({ recommendations, lastUpdated, genaiReport, genaiItem
         </div>
         <span className="text-[11px] font-medium" style={{ color: '#adb3b0' }}>更新: {lastUpdated}</span>
       </header>
+
+      {/* 週次サマリーボタン */}
+      <div className="px-4 pt-3 pb-1 flex justify-center">
+        <WeeklySummaryButton />
+      </div>
 
       <nav className="px-4 py-4">
         <div className="flex items-center gap-2 p-1 rounded-full w-fit" style={{ backgroundColor: '#f2f4f2' }}>

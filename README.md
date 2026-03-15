@@ -1,6 +1,6 @@
 # Analyse Market
 
-> 個人開発者が「何を作るか」「何を使うか」「何が流行っているか」を毎朝確認する情報収集・AI分析ダッシュボード
+> 個人開発者が「何を作るか」「何を使うか」を毎朝確認する情報収集・AI分析ダッシュボード
 
 ---
 
@@ -8,102 +8,83 @@
 
 - 「作りたいもの」を作ってきたが売れなかった → **市場ニーズ起点で開発を決める**
 - AI技術は日々変わる → **毎朝キャッチアップして開発に活かす**
-- SNSのトレンドを掴みたい → **X・TikTok・Instagramの流行を把握する**
 
 ---
 
 ## 毎朝の使い方
 
 ```
-1. http://localhost:3000 （または Vercel URL）を開く
-2. 「今すぐ分析」ボタンを押す（1分以内に完了）
-3. 「今すぐ着手可」フィルターで絞り込んで今週作るアプリを決める
-4. GenAI タブで今週のAI動向と「自分の開発に活かせること」を確認
-5. SNS タブでいま話題のトレンドを確認（Phase 4）
+1. http://localhost:3000（または Vercel URL）を開く
+2. 「今すぐ分析」ボタンを押す（Apps タブ or GenAI タブ）
+3. 「今週のサマリー」ボタンを押して今週全体を1画面で確認
+4. Apps タブ → 「今すぐ着手可」フィルターで今週作るアプリを決める
+5. GenAI タブ → 今週のAI動向と「明日やること」を確認
 ```
 
 ---
 
-## チャンネル構成と実装状況
+## チャンネル構成
 
 | チャンネル | 概要 | 状況 |
 |-----------|------|------|
-| 📱 **Apps** | App Store / Google Play ランキング収集 → Gemini AIが「今作るべきアプリ」を推薦 | ✅ 実装済み |
-| 🤖 **GenAI** | Anthropic / OpenAI / GitHub 等の最新動向を収集 → AIが「今週のハイライト・自分の開発への影響」をまとめる | 🔜 Phase 3.5 |
-| 📊 **SNS** | X(Twitter) / TikTok / Instagram のトレンドを収集 → AIが「今バズっていること」と「アプリ開発への転用ヒント」を分析 | 🔜 Phase 5 |
+| 📱 **Apps** | App Store / Google Play ランキング + Google Trends → 「今作るべきアプリ5件」を推薦 | ✅ 実装済み |
+| 🤖 **GenAI** | Anthropic / OpenAI / Google / GitHub / HN / Reddit / PH / npm → 「今週のAI動向・明日やること」 | ✅ 実装済み |
+| 📊 **SNS** | X(Twitter) / TikTok / Instagram のトレンド収集 | 🔜 Phase 5 |
 
 ---
 
-## 📱 Appsチャンネル — データ収集ソース
+## 📱 Apps チャンネル — データ収集ソース
 
-### 現在収集中（Phase 1 完了）
-
-| ソース | 内容 | 取得数 | 頻度 |
-|--------|------|--------|------|
-| **App Store RSS** | iOS 無料/有料ランキング Top100 | 200件/日 | 毎日 02:00 JST |
-| **Google Play** | Android 無料/売上ランキング × 全体/ゲーム | 800件/日 | 毎日 02:00 JST |
-
-### 今後追加予定（Phase 4）
-
-| ソース | 内容 | 方法 |
+| ソース | 内容 | 頻度 |
 |--------|------|------|
-| **Google Trends** | カテゴリ別検索トレンド（0-100スコア） | `google-trends-api` npm |
-| **Reddit** | r/androidapps, r/iosapps, r/AppIdeas の人気投稿 | Reddit API |
-| **Product Hunt** | 週間人気アプリ（モバイルカテゴリ） | Product Hunt API |
-| **App Store Reviews** | 競合アプリの低評価レビュー（不満収集） | Apple RSS Reviews |
+| **App Store RSS** | iOS 無料/有料 Top100 | 毎日 02:00 JST |
+| **Google Play Scraper** | Android 無料/売上 × 全体/ゲーム Top200 | 毎日 02:00 JST |
+| **Google Trends** | アプリ関連キーワード7件のスコア・momentum | 毎日 02:00 JST |
 
-### AI推薦の判断基準
+### AI推薦の判断基準（優先順）
 
-| 指標 | 基準 | 意味 |
-|------|------|------|
-| ランキング変動 | 前週比で上昇 | 今伸びている証拠 |
-| 低評価集中 | ★2.5以下 かつ 1,000件以上 | 不満 = 参入余地 |
-| Google Trends | スコア50以上 かつ 先週比+10% | 検索需要が実際に増加 |
-| Reddit スコア | points ≥ 50 | ノイズ除去済みの話題 |
+1. iOS + Android **両方でランクイン**（需要の確実性）
+2. Google Trends が **↑上昇中**（タイミングが今）
+3. 既存アプリの**評価が低い**（★2.5以下・1000件以上）= 参入余地あり
+4. React Native で **6週以内に1人で作れる**
 
 ---
 
-## 🤖 GenAIチャンネル — データ収集ソース（Phase 3.5）
+## 🤖 GenAI チャンネル — データ収集ソース
 
-| ソース | 内容 | スコア重み |
-|--------|------|-----------|
-| Anthropic Blog / Changelog | Claude新機能・API変更 | +40 |
-| OpenAI Blog / Changelog | GPT・API更新 | +30 |
-| Google DeepMind Blog | Gemini・研究動向 | +20 |
-| GitHub Trending（AIフィルター） | 急上昇AIリポジトリ | stars_today>100 で+10 |
-| Hacker News | AI系トップ記事 | points>200 で+10 |
-| Reddit（r/ClaudeAI, r/LocalLLaMA 等） | コミュニティの話題 | 週次 |
-| npm（@anthropic-ai/sdk 等） | SDK新バージョン追跡 | 週次 |
+| ソース | 内容 | スコア |
+|--------|------|--------|
+| **Anthropic Blog** | Claude新機能・API変更 | ベース+40 |
+| **OpenAI Blog** | GPT・API更新 | ベース+30 |
+| **Google AI Blog** | Gemini・DeepMind動向 | ベース+50 |
+| **GitHub Trending** | 急上昇AIリポジトリ（AIキーワードフィルタ） | stars数で加算 |
+| **Hacker News** | AI系トップ記事（50 points以上） | points数で加算 |
+| **Reddit** | r/ClaudeAI・r/LocalLLaMA・r/MachineLearning | upvotes/100 |
+| **Product Hunt** | AI製品 Top（50 votes以上） | votes/10 |
+| **npm** | @anthropic-ai/sdk・openai 等7パッケージのバージョン変化 | 固定70 |
 
----
+### AI分析の出力セクション
 
-## 📊 SNSチャンネル — データ収集ソース（Phase 5）
-
-個人開発アプリのマーケットヒントを SNS から掘り出す。
-
-| ソース | 内容 | 方法 |
-|--------|------|------|
-| **X (Twitter)** | トレンドキーワード・AI関連ツイート | X API v2 |
-| **TikTok** | 急上昇ハッシュタグ（アプリ紹介・ライフスタイル系） | TikTok Research API |
-| **Instagram** | Reels トレンドハッシュタグ | Instagram Graph API |
-| **YouTube** | 急上昇動画タイトルのキーワード分析 | YouTube Data API |
-
-### SNS分析でわかること
-
-- 「このカテゴリが今バズっている」→ アプリ需要の先行指標
-- 「このライフスタイルに刺さるアプリがない」→ ギャップ発見
-- 「このアプリ名がよく出てくる」→ 競合・参考事例の発見
+| セクション | 内容 |
+|-----------|------|
+| 今週のハイライト | 最重要1〜3件（URL付き、なぜ重要か・開発への影響） |
+| npmアップデートアラート | 使用中ライブラリの破壊的変更を検出 |
+| 新しいAIツール | 今すぐ試せるツール・ライブラリ（最大3件） |
+| コミュニティの声 | Reddit・HN で話題のトピック |
+| 自分の開発に今すぐ活かせること | **明日できる具体的な作業3件** |
 
 ---
 
-## AIによる推薦の実現可能性ゾーン
+## 📅 週次サマリー機能
 
-| ゾーン | 意味 | 目安 |
-|--------|------|------|
-| **今すぐ着手可** | React Native + Supabase だけで作れる | ～8週 |
-| **要学習** | 3ヶ月以内に習得できるスキルが必要 | 8～16週 |
-| **難易度高** | 深い専門知識が必要（ML・医療・法律等） | 16週以上 |
-| **ハード要件あり** | IoT/BLE/ハードウェアが必要（市場情報として把握） | 見積不可 |
+ヘッダーの「今週のサマリー」ボタンを押すと、**全チャンネルのデータを横断した1週間の総括**を生成します。
+
+| 出力セクション | 内容 |
+|---|---|
+| 今週の総括 | 今週を一言で表す3〜4行の評価 |
+| 今週の勝ち筋 | 今週のデータから導ける「今作ると勝てる」アプリ1〜2件 |
+| 今週のAI活用ヒント | GenAI動向から「自分のコードに即使える」技術 |
+| 来週やること | 月曜から始められる具体的な作業3件 |
 
 ---
 
@@ -111,24 +92,24 @@
 
 | ジョブ | タイミング | 内容 |
 |--------|-----------|------|
-| `collect-daily` | 毎日 02:00 JST | App Store + Google Play ランキング収集 |
-| `analyze-weekly` | 毎週月曜 08:00 JST | Gemini AI による週次レポート生成 |
+| `collect-daily` | 毎日 02:00 JST | Apps（App Store・Google Play・Trends）+ GenAI（全8ソース）収集 |
+| `analyze-weekly` | 毎週月曜 08:00 JST | Apps推薦 + GenAI週次レポート生成 |
 
-> GitHub Actions 無料枠（月2,000分）で余裕。毎日1分 × 30日 = 30分。
+> GitHub Actions 無料枠（月2,000分）で余裕。合計1日あたり約2〜3分。
 
 ---
 
 ## 技術スタック
 
-| 層 | 技術 | 備考 |
-|----|------|------|
-| ダッシュボード | Next.js 14 App Router + TypeScript | `apps/web/` |
-| スタイル | Tailwind CSS + shadcn/ui | |
-| DB | Supabase (PostgreSQL) | `personal-project` / `rttcdttncrabozpvucna` |
-| AI分析 | Gemini API (`gemini-3-flash-preview`) | 1,500 RPD 無料枠 |
-| 収集スクリプト | Node.js / TypeScript | `apps/collector/` |
-| 定期実行 | GitHub Actions (cron) | |
-| デプロイ | Vercel | |
+| 層 | 技術 |
+|----|------|
+| ダッシュボード | Next.js 16 App Router + TypeScript |
+| スタイル | Tailwind CSS |
+| DB | Supabase (PostgreSQL) — `personal-project` / `rttcdttncrabozpvucna` |
+| AI分析 | Gemini API (`gemini-2.0-flash-001`) |
+| 収集スクリプト | Node.js / TypeScript (`apps/collector/`) |
+| 定期実行 | GitHub Actions (cron) |
+| デプロイ | Vercel（予定） |
 
 ---
 
@@ -136,25 +117,39 @@
 
 ```
 analyse-market/
-├── README.md                    ← このファイル
-├── CLAUDE.md                    ← AI実装ガイド（Claudeセッション用）
-├── specs/                       ← 詳細仕様書
-│   ├── 01-overview.md           システム概要
-│   ├── 02-apps-datasources.md   📱 Appsデータ収集仕様
-│   ├── 03-genai-datasources.md  🤖 GenAIデータ収集仕様
-│   ├── 04-database.md           DBスキーマ全定義
-│   ├── 05-ai-engine.md          Geminiプロンプト・output設計
-│   ├── 06-dashboard.md          ダッシュボード画面設計
-│   └── 07-dev-phases.md         実装フェーズ・環境変数
+├── README.md
+├── CLAUDE.md                         ← AI実装ガイド（Claudeセッション用）
+├── specs/                            ← 詳細仕様書
 ├── apps/
-│   ├── collector/               データ収集 + AI分析スクリプト
-│   │   └── src/
-│   │       ├── collectors/apps/ appstore.ts, googleplay.ts
-│   │       ├── analyzers/apps/  recommend.ts（Gemini分析）
-│   │       └── lib/             supabase.ts, gemini.ts
-│   └── web/                     Next.js ダッシュボード
-├── supabase/migrations/         SQLマイグレーションファイル
-└── .github/workflows/           GitHub Actions定義
+│   ├── collector/src/
+│   │   ├── collectors/
+│   │   │   ├── apps/                 appstore.ts, googleplay.ts, trends.ts
+│   │   │   └── genai/                anthropic.ts, openai.ts, google.ts,
+│   │   │                             github.ts, hackernews.ts, reddit.ts,
+│   │   │                             producthunt.ts, packages.ts
+│   │   ├── analyzers/
+│   │   │   ├── apps/                 recommend.ts（Trends統合済み）
+│   │   │   └── genai/                weekly-report.ts
+│   │   └── lib/                      supabase.ts, gemini.ts
+│   └── web/
+│       ├── app/
+│       │   ├── page.tsx              Server Component（データ取得）
+│       │   └── api/
+│       │       ├── apps/analyze/     Apps オンデマンド分析
+│       │       ├── genai/analyze/    GenAI オンデマンド分析
+│       │       └── summary/weekly/   週次サマリー生成 + 取得
+│       └── components/
+│           ├── Dashboard.tsx
+│           ├── WeeklySummary.tsx     週次サマリーボタン + モーダル
+│           ├── apps/                 TopCard, RecommendCard, AppsDashboard
+│           └── genai/                GenAiDashboard, GenAiAnalyzeButton
+├── supabase/migrations/
+│   ├── phase35_run.sql               amk_genai_items, amk_genai_analyses
+│   ├── phase4_run.sql                amk_trend_signals, CHECK制約拡張
+│   └── phase4b_summary.sql          weekly_summary タイプ追加
+└── .github/workflows/
+    ├── collect-daily.yml             全ソース毎日収集
+    └── analyze-weekly.yml            週次分析（Apps + GenAI）
 ```
 
 ---
@@ -163,11 +158,11 @@ analyse-market/
 
 | フェーズ | 内容 | 状況 |
 |---------|------|------|
-| **Phase 1** | App Store / Google Play 収集 + Supabase保存 + GitHub Actions | ✅ 完了 |
-| **Phase 2** | Gemini API分析エンジン（`npm run analyze:recommend`） | ✅ 完了 |
+| **Phase 1** | App Store / Google Play 収集 + GitHub Actions | ✅ 完了 |
+| **Phase 2** | Gemini AI 分析エンジン（推薦生成） | ✅ 完了 |
 | **Phase 3** | Next.js ダッシュボード（Apps タブ） | ✅ 完了 |
-| **Phase 3.5** | GenAI チャンネル（収集 + 分析 + タブ追加） | 🔜 次 |
-| **Phase 4** | Google Trends / Reddit / Product Hunt 統合 | 🔜 |
+| **Phase 3.5** | GenAI チャンネル（8ソース収集 + 分析 + タブ） | ✅ 完了 |
+| **Phase 4** | Google Trends 統合・分析精度向上・週次サマリー | ✅ 完了 |
 | **Phase 5** | SNS チャンネル（X / TikTok / Instagram） | 🔜 |
 
 ---
@@ -176,18 +171,21 @@ analyse-market/
 
 ```bash
 # ダッシュボード
-cd apps/web
-npm install
-npm run dev          # http://localhost:3000
+cd apps/web && npm install && npm run dev
+# → http://localhost:3000
 
-# アプリランキング収集（手動実行）
+# 全ソース収集（手動）
 cd apps/collector
-npm run collect:apps
+npm run collect:apps      # App Store + Google Play
+npm run collect:genai     # Anthropic + OpenAI + GitHub + HN
+npm run collect:phase4    # npm + Reddit + Google + ProductHunt + Trends
 
-# AI分析（手動実行）
-cd apps/collector
-npm run analyze:recommend
+# AI分析（手動）
+npm run analyze:recommend  # Apps 推薦（5件・Trends統合）
+npm run analyze:genai      # GenAI 週次レポート
 ```
+
+---
 
 ## 環境変数
 
@@ -196,6 +194,7 @@ npm run analyze:recommend
 SUPABASE_URL=https://rttcdttncrabozpvucna.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=
 GEMINI_API_KEY=
+PRODUCT_HUNT_API_TOKEN=    # Product Hunt収集に必要
 ```
 
 ### `apps/web/.env.local`
@@ -204,4 +203,12 @@ NEXT_PUBLIC_SUPABASE_URL=https://rttcdttncrabozpvucna.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 GEMINI_API_KEY=
+```
+
+### GitHub Actions Secrets
+```
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+GEMINI_API_KEY
+PRODUCT_HUNT_API_TOKEN     # 任意（未設定時はスキップ）
 ```
