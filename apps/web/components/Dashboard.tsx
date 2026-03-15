@@ -40,9 +40,12 @@ export function Dashboard({ recommendations, lastUpdated, genaiReport, genaiItem
       >
         <div className="flex items-center gap-2">
           <TrendingUp size={20} style={{ color: '#545f73' }} />
-          <h1 className="text-[20px] font-semibold tracking-tight">Analyse Market</h1>
+          <div>
+            <h1 className="text-[18px] font-semibold tracking-tight leading-tight">Analyse Market</h1>
+            <p className="text-[10px] leading-tight" style={{ color: '#adb3b0' }}>ランキングをAIが分析 → 今作るべきアプリと使うべきAIを提案</p>
+          </div>
         </div>
-        <span className="text-[12px] font-medium" style={{ color: '#5a605e' }}>最終更新: {lastUpdated}</span>
+        <span className="text-[11px] font-medium" style={{ color: '#adb3b0' }}>更新: {lastUpdated}</span>
       </header>
 
       <nav className="px-4 py-4">

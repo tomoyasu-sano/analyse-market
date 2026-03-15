@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ExternalLink, Bot } from 'lucide-react'
+import { ExternalLink, Bot, Sparkles } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { GenAiAnalyzeButton } from './GenAiAnalyzeButton'
 
 interface GenAIItem {
@@ -40,12 +41,28 @@ function SourceBadge({ source }: { source: string }) {
   )
 }
 
+function ScoreBar({ score }: { score: number }) {
+  const level = score >= 70 ? { label: 'High', color: '#16a34a' }
+    : score >= 40 ? { label: 'Med', color: '#d97706' }
+    : { label: 'Low', color: '#adb3b0' }
+  return (
+    <span className="text-[10px] font-semibold" style={{ color: level.color }}>
+      ▲ {level.label}
+    </span>
+  )
+}
+
+function extractHighlightSection(content: string): string {
+  const m = content.match(/## 今週のハイライト[\s\S]*?(?=\n## [^今]|$)/)
+  return m ? m[0] : ''
+}
+
 function extractActionItems(content: string): string[] {
   const section = content.match(/## 自分の開発に今すぐ活かせること([\s\S]*?)(?=\n## |$)/)?.[1] ?? ''
   return section
     .split('\n')
-    .filter(l => l.trim().startsWith('-') || l.trim().startsWith('•') || l.trim().match(/^\d+\./))
-    .map(l => l.replace(/^[-•\d.\s]+/, '').trim())
+    .filter(l => l.trim().match(/^[-•\d.]/))
+    .map(l => l.replace(/^[-•\d.\s]+/, '').replace(/\*\*/g, '').trim())
     .filter(Boolean)
     .slice(0, 5)
 }
@@ -55,20 +72,22 @@ export function GenAiDashboard({ report, items }: { report: GenAIReport | null; 
 
   const filtered = sourceFilter === 'all' ? items : items.filter(i => i.source === sourceFilter)
   const actionItems = report ? extractActionItems(report.content) : []
+  const highlightSection = report ? extractHighlightSection(report.content) : ''
+
+  // フィルターごとの件数
+  const counts: Record<string, number> = { all: items.length }
+  for (const f of SOURCE_FILTERS.slice(1)) {
+    counts[f.value] = items.filter(i => i.source === f.value).length
+  }
 
   if (items.length === 0 && !report) {
     return (
       <div className="px-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: '#2d3432' }}>
-            GenAI 動向
-          </h2>
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: '#2d3432' }}>GenAI 動向</h2>
           <GenAiAnalyzeButton />
         </div>
-        <div
-          className="rounded-2xl p-12 flex flex-col items-center justify-center text-center"
-          style={{ backgroundColor: '#ffffff', boxShadow: '0 4px 24px -2px rgba(45,52,50,0.06)' }}
-        >
+        <div className="rounded-2xl p-12 flex flex-col items-center text-center" style={{ backgroundColor: '#ffffff', boxShadow: '0 4px 24px -2px rgba(45,52,50,0.06)' }}>
           <Bot size={48} className="mb-4" style={{ color: '#adb3b0' }} />
           <p className="font-semibold text-base mb-1" style={{ color: '#2d3432' }}>データがありません</p>
           <p className="text-sm mb-4" style={{ color: '#5a605e' }}>まず収集スクリプトを実行してください</p>
@@ -82,21 +101,51 @@ export function GenAiDashboard({ report, items }: { report: GenAIReport | null; 
 
   return (
     <div className="space-y-6">
-      {/* Section A: 今すぐ活かせること */}
-      {actionItems.length > 0 && (
+      {/* Section A: 今週のハイライト */}
+      {highlightSection && (
         <section className="px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: '#2d3432' }}>
-              自分の開発に今すぐ活かせること
-            </h2>
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} style={{ color: '#545f73' }} />
+              <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: '#2d3432' }}>今週のハイライト</h2>
+            </div>
             <GenAiAnalyzeButton />
           </div>
+          <div className="rounded-2xl p-5 prose prose-sm max-w-none" style={{ backgroundColor: '#ffffff', boxShadow: '0 4px 24px -2px rgba(45,52,50,0.06)' }}>
+            <ReactMarkdown
+              components={{
+                h2: () => null,
+                a: ({ href, children }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">
+                    {children}
+                  </a>
+                ),
+                p: ({ children }) => <p className="text-[13px] leading-relaxed mb-2" style={{ color: '#2d3432' }}>{children}</p>,
+                li: ({ children }) => <li className="text-[13px] leading-relaxed mb-1" style={{ color: '#2d3432' }}>{children}</li>,
+                strong: ({ children }) => <strong style={{ color: '#1a1a1a' }}>{children}</strong>,
+              }}
+            >
+              {highlightSection}
+            </ReactMarkdown>
+          </div>
+        </section>
+      )}
+
+      {/* Section B: 自分の開発に活かせること */}
+      {actionItems.length > 0 && (
+        <section className="px-4">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#2d3432' }}>
+            自分の開発に今すぐ活かせること
+          </h2>
           <div className="rounded-2xl p-5" style={{ backgroundColor: '#ffffff', boxShadow: '0 4px 24px -2px rgba(45,52,50,0.06)' }}>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {actionItems.map((item, i) => (
-                <li key={i} className="flex gap-2 text-[13px]" style={{ color: '#2d3432' }}>
-                  <span className="flex-shrink-0 font-bold" style={{ color: '#545f73' }}>{i + 1}.</span>
-                  <span>{item}</span>
+                <li key={i} className="flex gap-3 text-[13px]" style={{ color: '#2d3432' }}>
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5"
+                    style={{ backgroundColor: '#d8e3fb', color: '#475266' }}>
+                    {i + 1}
+                  </span>
+                  <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
@@ -104,29 +153,27 @@ export function GenAiDashboard({ report, items }: { report: GenAIReport | null; 
         </section>
       )}
 
-      {/* Section B: 収集アイテム一覧 */}
+      {/* Section C: 収集アイテム一覧 */}
       <section className="px-4">
-        {actionItems.length === 0 && (
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[13px] font-semibold uppercase tracking-wider" style={{ color: '#2d3432' }}>
-              GenAI 動向
-            </h2>
-            <GenAiAnalyzeButton />
-          </div>
-        )}
+        <h2 className="text-[13px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#2d3432' }}>
+          収集アイテム
+        </h2>
 
-        {/* ソースフィルター */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 mb-4">
+        {/* ソースフィルター（件数付き） */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 mb-4">
           {SOURCE_FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => setSourceFilter(f.value)}
-              className="flex-shrink-0 px-4 py-1.5 rounded-full text-[12px] font-medium transition-all"
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1"
               style={sourceFilter === f.value
                 ? { backgroundColor: '#545f73', color: '#f6f7ff' }
                 : { backgroundColor: '#ecefec', color: '#5a605e' }}
             >
               {f.label}
+              {counts[f.value] > 0 && (
+                <span className="text-[10px] opacity-70">({counts[f.value]})</span>
+              )}
             </button>
           ))}
         </div>
@@ -148,9 +195,7 @@ export function GenAiDashboard({ report, items }: { report: GenAIReport | null; 
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ backgroundColor: '#ecefec', color: '#5a605e' }}>
                       {item.item_type}
                     </span>
-                    <span className="text-[10px]" style={{ color: '#adb3b0' }}>
-                      スコア {item.relevance_score}
-                    </span>
+                    <ScoreBar score={item.relevance_score} />
                   </div>
                   <p className="text-[14px] font-semibold leading-snug mb-1" style={{ color: '#2d3432' }}>
                     {item.title}
