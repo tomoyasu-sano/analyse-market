@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { GoogleGenAI } from '@google/genai'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+function getSupabase() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+function getAI() {
+  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+}
 
 function extractActionItems(content: string): string[] {
   const section = content.match(/## 自分の開発に今すぐ活かせること([\s\S]*?)(?=\n## |$)/)?.[1] ?? ''
@@ -91,6 +92,8 @@ ${npmSection}
 }
 
 export async function POST() {
+  const supabase = getSupabase()
+  const ai = getAI()
   try {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data: items, error: itemsError } = await supabase
