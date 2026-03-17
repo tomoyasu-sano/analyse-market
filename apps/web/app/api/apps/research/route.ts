@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     const ai = getAI()
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro-preview-05-06',
+      model: 'gemini-3.1-pro-preview',
       contents: buildPrompt(idea.trim()),
     })
 
