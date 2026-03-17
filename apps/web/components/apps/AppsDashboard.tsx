@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { RecommendCard } from './RecommendCard'
 import { TopCard } from './TopCard'
 import { AnalyzeButton } from './AnalyzeButton'
+import { IdeaResearch } from './IdeaResearch'
 
 interface Recommendation {
   id: string; rank: number; app_concept: string; category: string | null
@@ -62,7 +63,10 @@ export function AppsDashboard({ recommendations }: { recommendations: Recommenda
         )}
       </section>
 
-      {/* Section B: フィルター（件数付き） */}
+      {/* Section B: アイデア検証 */}
+      <IdeaResearch />
+
+      {/* Section C: フィルター（件数付き） */}
       <section className="px-4 mb-4">
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
           {FILTERS.map(f => (
@@ -85,7 +89,7 @@ export function AppsDashboard({ recommendations }: { recommendations: Recommenda
         </div>
       </section>
 
-      {/* Section C: 推薦一覧 */}
+      {/* Section D: 推薦一覧 */}
       <section className="px-4 space-y-4">
         {filtered.map(rec => <RecommendCard key={rec.id} rec={rec} />)}
         {filtered.length === 0 && (
